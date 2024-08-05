@@ -146,11 +146,13 @@ def construct_prompts(
         add_spaces=False,
         x_ordering=None
         ):
-
     # dim_y is 1 always currently (univariate forecasting)
     # dim_y_train is all the variables
-    dim_y_train = get_dimension(y_train) # TODO: Gets dimension on an instance-wise basis; dangerous for non-uniform data / data with irregular 
+    # Hence we get it again here
+    dim_y_train = get_dimension(y_train)
     # Convert xy train and x test to str.
+    # Below fix requires for floats_to_str to work
+    if dim_y_train == 1: y_train = y_train.squeeze()
     if x_ordering is not None:  # xs are already a string
         str_x_train = x_train
         str_x_test = x_test
