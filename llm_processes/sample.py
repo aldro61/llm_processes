@@ -29,6 +29,7 @@ def sample(args, tokenizer, model, results):
                             x_train=x_train_current[sample_index],
                             y_train=y_train_current[sample_index],
                             x_test=np.array([x]),
+                            y_test=results['data']['y_test'][idx], 
                             prefix=args.prefix,
                             x_prefix=args.x_prefix,
                             y_prefix=args.y_prefix,

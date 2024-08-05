@@ -13,7 +13,7 @@ def prepare_data(args):
     results = {'data': data, 'args': args}
 
     results['dim_x'] = get_dimension(results['data']['x_train'])
-    results['dim_y'] = get_dimension(results['data']['y_train'])
+    results['dim_y'] = 1 # Hardcoded since it's always univariate forecasting # get_dimension(results['data']['y_train'])
 
     if (args.y_min is not None) and (args.y_max is not None):  # scale the ys to the new range
         old_min = np.min(results['data']['y_true'])

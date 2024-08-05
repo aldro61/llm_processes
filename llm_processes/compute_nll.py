@@ -159,7 +159,7 @@ def compute_nll(args, tokenizer, model, results):
                 # So to be consistent between positive and negative numbers,
                 # non_y doesn't have a space and y includes a space.
                 non_y = get_prompts(x_train=x_context, y_train=y_context,
-                                    x_test=np.array([x_test]))[0]
+                                    x_test=np.array([x_test]), y_test=None)[0]
                 str_y_test_true = floats_to_str(y_test_true, args.num_decimal_places_y)
                 y = f'{str_y_test_true}{args.break_str}'
                 # if args.llm_type == 'gemma':
