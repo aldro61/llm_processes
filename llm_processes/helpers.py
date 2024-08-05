@@ -162,11 +162,13 @@ def construct_prompts(
     str_y_train = floats_to_str(y_train, num_decimal_y, dim_y_train, add_spaces)
 
     # Univariate or multivariate
-    if len(y_test) == 1:
+    if type(y_test) == type(None) or len(y_test) == 1:
+        # That is the output; do not provide it
         str_y_test = ""
     else:
         # When converting all other variables of y_test to string in our prompt, we do len(y_test)-1
         str_y_test = floats_to_str(y_test[:-1], num_decimal_y, len(y_test)-1, add_spaces) # TODO: check
+
     if order == 'random':
         # note:
         # we assume that the input training data is already in random order,
@@ -335,7 +337,6 @@ def process_generated_results(gen_results, break_str='\n', dim_y=1, max_generate
             y_test_mean,
             gen_results['data']['y_test'][: len(y_test_mean), -1]
         )
-        # Why are the above two inconsistent?
         mae = np.mean(np.abs(y_test_median - np.array(gen_results['data']['y_test'][:, -1])))
 
 

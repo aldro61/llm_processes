@@ -21,7 +21,7 @@ def sample(args, tokenizer, model, results):
                 per_sample_prompts = [[] for _ in range(args.num_samples)]
                 sample_indices_to_process = np.arange(0, args.num_samples).tolist()
                 while len(sample_indices_to_process) > 0:
-                    batch_size = 2 # min(args.batch_size, len(sample_indices_to_process))
+                    batch_size = min(args.batch_size, len(sample_indices_to_process))
                     batch_indices = sample_indices_to_process[0 : batch_size]
                     batch_prompts = []
                     for sample_index in batch_indices:
