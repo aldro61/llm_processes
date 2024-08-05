@@ -132,6 +132,7 @@ def construct_prompts(
         x_train,
         y_train,
         x_test,
+        y_test,
         prefix='',
         x_prefix='',
         y_prefix=', ',
@@ -146,6 +147,9 @@ def construct_prompts(
         x_ordering=None
         ):
 
+    # dim_y is 1 always currently (univariate forecasting)
+    # dim_y_train is all the variables
+    dim_y_train = get_dimension(y_train) # TODO: Gets dimension on an instance-wise basis; dangerous for non-uniform data / data with irregular 
     # Convert xy train and x test to str.
     if x_ordering is not None:  # xs are already a string
         str_x_train = x_train
@@ -153,8 +157,14 @@ def construct_prompts(
     else:
         str_x_train = floats_to_str(x_train, num_decimal_x, dim_x, add_spaces)
         str_x_test = floats_to_str(x_test, num_decimal_x, dim_x, add_spaces)
-    str_y_train = floats_to_str(y_train, num_decimal_y, dim_y, add_spaces)
+    str_y_train = floats_to_str(y_train, num_decimal_y, dim_y_train, add_spaces)
 
+    # Univariate or multivariate
+    if len(y_test) == 1:
+        str_y_test = ""
+    else:
+        # When converting all other variables of y_test to string in our prompt, we do len(y_test)-1
+        str_y_test = floats_to_str(y_test[:-1], num_decimal_y, len(y_test)-1, add_spaces) # TODO: check
     if order == 'random':
         # note:
         # we assume that the input training data is already in random order,
@@ -165,7 +175,7 @@ def construct_prompts(
                 x=x,
                 y=y,
                 dim_x=dim_x,
-                dim_y=dim_y,
+                dim_y=dim_y_train,
                 first_prefix=x_prefix,
                 next_prefix=y_prefix,
                 break_str=break_str
@@ -180,14 +190,16 @@ def construct_prompts(
                     x=x,
                     y=y,
                     dim_x=dim_x,
-                    dim_y=dim_y,
+                    dim_y=dim_y_train,
                     first_prefix=x_prefix,
                     next_prefix=y_prefix,
                     break_str=break_str
                 )
 
     prompts = []
+    xt_str_index = -1
     for (xt_str, xt_num) in zip(str_x_test, _map_to_ordinal(x_test, x_ordering)):
+        xt_str_index += 1
         if order == 'distance':
             distances = []
             for value in _map_to_ordinal(x_train, x_ordering):
@@ -210,7 +222,9 @@ def construct_prompts(
                     next_prefix=y_prefix, break_str=break_str
                 )
 
-        prompt = f'{base_prompt}{_format_query_data_point(x=xt_str, dim_x=dim_x, first_prefix=x_prefix, next_prefix=y_prefix)}'
+        prompt = f'{base_prompt}{_format_query_data_point(x=xt_str, dim_x=dim_x, first_prefix=x_prefix, next_prefix=y_prefix)}' # dim_x=dim_x could be a bug: we are enumerating on str_x_test, so here it is always 1
+        for yt_str in str_y_test:
+            prompt = f'{prompt}{_format_query_data_point(x=yt_str, dim_x=1, first_prefix=x_prefix, next_prefix=y_prefix)}'
         if remove_space:
             prompt = prompt.rstrip(' ')
         prompts.append(prompt)
@@ -317,10 +331,10 @@ def process_generated_results(gen_results, break_str='\n', dim_y=1, max_generate
     else:
         mse = compute_mse(
             y_test_mean,
-            gen_results['data']['y_test'][: len(y_test_mean)]
+            gen_results['data']['y_test'][: len(y_test_mean), -1]
         )
-
-        mae = np.mean(np.abs(y_test_median - np.array(gen_results['data']['y_test'])))
+        # Why are the above two inconsistent?
+        mae = np.mean(np.abs(y_test_median - np.array(gen_results['data']['y_test'][:, -1])))
 
 
     gen_results['y_test'] = y_tests

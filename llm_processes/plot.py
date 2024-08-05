@@ -29,7 +29,8 @@ def plot_samples(results, name, num_trajectories=0, plot_dir="./plots"):
         if 'x_ordering' in results['data']:
             x_ordering = results['data']['x_ordering']
         fig, axes = plt.subplots(1, 1, figsize=(7, 4))
-        axes.scatter(_map_to_ordinal(results['data']['x_train'], x_ordering), results['data']['y_train'], label='Training points', c='black', marker='v')
+        # TODO: currently it only plots the forecast variable of interest. Can be modified to plot all variables in the multivariate input setup
+        axes.scatter(_map_to_ordinal(results['data']['x_train'], x_ordering), results['data']['y_train'][:, -1:], label='Training points', c='black', marker='v')
         if 'x_true' in results['data']:
             axes.plot(results['data']['x_true'], results['data']['y_true'], label='True Function', c='black')
 

@@ -20,9 +20,9 @@ def run_llm_process(args, model, tokenizer):
 
     if 'sample' in args.mode:
         results = sample(args, tokenizer, model, results)
-    
-    if 'logpy' in args.mode:
-        results = compute_nll(args, tokenizer, model, results)
+
+    # if 'logpy' in args.mode:
+    #     results = compute_nll(args, tokenizer, model, results)
 
     if 'sample' in args.mode:
         # plot results
