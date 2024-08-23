@@ -24,14 +24,14 @@ def run_llm_process(args, model, tokenizer):
     if 'logpy' in args.mode:
         results = compute_nll(args, tokenizer, model, results)
 
-    if 'sample' in args.mode:
-        # plot results
-        if ('mnist' in args.experiment_name):
-            plot_images(results, args.experiment_name, args.plot_dir)
-        else:
-            plot_samples(results, args.experiment_name, args.plot_trajectories, args.plot_dir)
-    if args.specify_xy:
-        plot_heatmap(results, args.experiment_name, args.plot_dir, args.xs, args.ys)
+    # if 'sample' in args.mode:
+    #     # plot results
+    #     if ('mnist' in args.experiment_name):
+    #         plot_images(results, args.experiment_name, args.plot_dir)
+    #     else:
+    #         plot_samples(results, args.experiment_name, args.plot_trajectories, args.plot_dir)
+    # if args.specify_xy:
+    #     plot_heatmap(results, args.experiment_name, args.plot_dir, args.xs, args.ys)
 
 
 def main():
