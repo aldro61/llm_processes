@@ -33,11 +33,23 @@ llm_map = {
     "qwen2.5-32B-Instruct": "Qwen/Qwen2.5-32B-Instruct",
     "qwen2.5-72B-Instruct": "Qwen/Qwen2.5-72B-Instruct",
 
+    "qwen2.5-0.5B": "Qwen/Qwen2.5-0.5B",
+    "qwen2.5-1.5B": "Qwen/Qwen2.5-1.5B",
+    "qwen2.5-3B": "Qwen/Qwen2.5-3B",
+    "qwen2.5-7B": "Qwen/Qwen2.5-7B",
+    "qwen2.5-14B": "Qwen/Qwen2.5-14B",
+    "qwen2.5-32B": "Qwen/Qwen2.5-32B",
+    "qwen2.5-72B": "Qwen/Qwen2.5-72B",
+
     "Mistral-Small-Instruct-2409": "mistralai/Mistral-Small-Instruct-2409",
     "Mistral-7B-Instruct-v0.3": "mistralai/Mistral-7B-Instruct-v0.3",
 
+    "Mistral-7B-v0.3": "mistralai/Mistral-7B-v0.3",
+
     "falcon-7b-instruct": "tiiuae/falcon-7b-instruct",
-    "falcon-40b-instruct": "tiiuae/falcon-40b-instruct"
+    "falcon-40b-instruct": "tiiuae/falcon-40b-instruct",
+
+    "falcon-7b": "tiiuae/falcon-7b"
 }
 
 
