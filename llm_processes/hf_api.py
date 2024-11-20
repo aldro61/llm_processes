@@ -1,10 +1,13 @@
 from transformers import (
-    LlamaForCausalLM, 
+    LlamaForCausalLM,
     LlamaTokenizer,
     AutoModelForCausalLM,
     AutoTokenizer,
+    LlamaTokenizerFast,
+    MistralForCausalLM
 )
 import torch
+import gc
 
 llm_map = {
     "llama-2-7B": "meta-llama/Llama-2-7b",
@@ -16,6 +19,25 @@ llm_map = {
     "mixtral-8x7B": "mistralai/Mixtral-8x7B-v0.1",
     "mixtral-8x7B-instruct": "mistralai/Mixtral-8x7B-Instruct-v0.1",
     "phi-3-mini-128k-instruct": "microsoft/Phi-3-mini-128k-instruct",
+    "gemma-2-9B": "google/gemma-2-9b",
+    "gemma-2-9B-instruct": "google/gemma-2-9b-it",
+    "gemma-2-27B": "google/gemma-2-27b",
+    "gemma-2-27B-instruct": "google/gemma-2-27b-it",
+
+    # New models for the rebuttal
+    "qwen2.5-0.5B-Instruct": "Qwen/Qwen2.5-0.5B-Instruct",
+    "qwen2.5-1.5B-Instruct": "Qwen/Qwen2.5-1.5B-Instruct",
+    "qwen2.5-3B-Instruct": "Qwen/Qwen2.5-3B-Instruct",
+    "qwen2.5-7B-Instruct": "Qwen/Qwen2.5-7B-Instruct",
+    "qwen2.5-14B-Instruct": "Qwen/Qwen2.5-14B-Instruct",
+    "qwen2.5-32B-Instruct": "Qwen/Qwen2.5-32B-Instruct",
+    "qwen2.5-72B-Instruct": "Qwen/Qwen2.5-72B-Instruct",
+
+    "Mistral-Small-Instruct-2409": "mistralai/Mistral-Small-Instruct-2409",
+    "Mistral-7B-Instruct-v0.3": "mistralai/Mistral-7B-Instruct-v0.3",
+
+    "falcon-7b-instruct": "tiiuae/falcon-7b-instruct",
+    "falcon-40b-instruct": "tiiuae/falcon-40b-instruct"
 }
 
 
@@ -29,25 +51,32 @@ def get_tokenizer(llm_path, llm_type):
         llm_path = llm_map[llm_type]
     if "llama-2" in llm_type:
         tokenizer = LlamaTokenizer.from_pretrained(
-            llm_path,
-            use_fast=False,
-            padding_side="left"
+            llm_path, use_fast=False, padding_side="left"
         )
     elif "llama-3" in llm_type:
         tokenizer = AutoTokenizer.from_pretrained(
-            llm_path,
-            padding_side="left",
-            legacy=False
+            llm_path, padding_side="left", legacy=False
         )
     elif "phi-3" in llm_type:
         tokenizer = AutoTokenizer.from_pretrained(
             llm_path,
             trust_remote_code=True,
         )
-    elif "mixtral" in llm_type:
+    elif "mixtral" in llm_type or "gemma" in llm_type or "qwen" in llm_type:
         tokenizer = AutoTokenizer.from_pretrained(
             llm_path,
-        )       
+        )
+    elif "Mistral-Small" in llm_type:
+        tokenizer = LlamaTokenizerFast.from_pretrained('mistralai/Mistral-Small-Instruct-2409')
+        tokenizer.pad_token = tokenizer.eos_token
+    elif "Mistral-7B" in llm_type:
+        tokenizer = AutoTokenizer.from_pretrained(
+            llm_path
+        )
+    elif "falcon" in llm_type:
+        tokenizer = AutoTokenizer.from_pretrained(
+            llm_path
+        )
     else:
         assert False
 
@@ -71,15 +100,14 @@ def get_model_and_tokenizer(llm_path, llm_type):
     tokenizer = get_tokenizer(llm_path, llm_type)
     if "llama-2" in llm_type:
         model = LlamaForCausalLM.from_pretrained(
-            llm_path,
-            device_map="auto",
-            torch_dtype=torch.float16,
+            llm_path, device_map="auto", torch_dtype=torch.float16
         )
     elif "llama-3" in llm_type:
         model = LlamaForCausalLM.from_pretrained(
             llm_path,
             device_map="auto",
             torch_dtype=torch.bfloat16,
+            attn_implementation="flash_attention_2",
         )
     elif "phi-3" in llm_type:
         model = AutoModelForCausalLM.from_pretrained(
@@ -93,7 +121,34 @@ def get_model_and_tokenizer(llm_path, llm_type):
             llm_path,
             trust_remote_code=True,
             torch_dtype=torch.float16,
-            device_map='auto',
+            device_map="auto",
+            attn_implementation="flash_attention_2",
+        )
+    elif "gemma" in llm_type:
+        model = AutoModelForCausalLM.from_pretrained(
+            llm_path,
+            device_map="auto",
+            attn_implementation="flash_attention_2",
+        )
+    elif "qwen" in llm_type:
+        model = AutoModelForCausalLM.from_pretrained(
+            llm_path,
+            torch_dtype="auto",
+            device_map="auto"
+        )
+    elif "Mistral-Small" in llm_type:
+        model = MistralForCausalLM.from_pretrained(
+            llm_path, device_map="auto", torch_dtype=torch.bfloat16
+        )
+    elif "Mistral-7B" in llm_type:
+        model = AutoModelForCausalLM.from_pretrained(
+            llm_path, torch_dtype=torch.bfloat16, device_map="auto"
+        )
+    elif "falcon" in llm_type:
+        model = AutoModelForCausalLM.from_pretrained(
+            llm_path,
+            torch_dtype=torch.bfloat16,
+            device_map="auto"
         )
     else:
         assert False
@@ -104,52 +159,11 @@ def get_model_and_tokenizer(llm_path, llm_type):
 
 # This assumes that there is only a single prompt and it gets replicated batch_size times
 @torch.inference_mode()
-def hf_generate(
-    model,
-    tokenizer,
-    input_str,
-    batch_size,
-    temp, 
-    top_p,
-    max_new_tokens
-    ):
+def hf_generate(model, tokenizer, input_str, batch_size, temp, top_p, max_new_tokens):
     batch = tokenizer([input_str], return_tensors="pt")
     batch = {k: v.repeat(batch_size, 1) for k, v in batch.items()}
     batch = {k: v.cuda() for k, v in batch.items()}
-    num_input_ids = batch['input_ids'].shape[1]
-
-    generate_ids = model.generate(
-        **batch,
-        do_sample=True,
-        max_new_tokens=max_new_tokens,
-        temperature=temp, 
-        top_p=top_p, 
-        renormalize_logits=False,
-        pad_token_id=tokenizer.eos_token_id
-    )
-
-    gen_strs = tokenizer.batch_decode(
-        generate_ids[:, num_input_ids:],
-        skip_special_tokens=True, 
-        clean_up_tokenization_spaces=False
-    )
-
-    return gen_strs
-
-
-# this assumes a batch of different prompts that may be different lengths
-@torch.inference_mode()
-def hf_generate_batch(
-    model,
-    tokenizer,
-    prompts,
-    temp,
-    top_p,
-    max_new_tokens
-    ):
-    batch = tokenizer(prompts, return_tensors="pt", padding=True)
-    batch = {k: v.cuda() for k, v in batch.items()}
-    num_input_ids = batch['input_ids'].shape[1]
+    num_input_ids = batch["input_ids"].shape[1]
 
     generate_ids = model.generate(
         **batch,
@@ -158,13 +172,51 @@ def hf_generate_batch(
         temperature=temp,
         top_p=top_p,
         renormalize_logits=False,
-        pad_token_id=tokenizer.eos_token_id
+        pad_token_id=tokenizer.eos_token_id,
     )
 
     gen_strs = tokenizer.batch_decode(
         generate_ids[:, num_input_ids:],
         skip_special_tokens=True,
-        clean_up_tokenization_spaces=False
+        clean_up_tokenization_spaces=False,
     )
+
+    # Clean up to free memory
+    del batch
+    del generate_ids
+    gc.collect()
+    torch.cuda.empty_cache()
+
+    return gen_strs
+
+
+# this assumes a batch of different prompts that may be different lengths
+@torch.inference_mode()
+def hf_generate_batch(model, tokenizer, prompts, temp, top_p, max_new_tokens):
+    batch = tokenizer(prompts, return_tensors="pt", padding=True)
+    batch = {k: v.cuda() for k, v in batch.items()}
+    num_input_ids = batch["input_ids"].shape[1]
+
+    generate_ids = model.generate(
+        **batch,
+        do_sample=True,
+        max_new_tokens=max_new_tokens,
+        temperature=temp,
+        top_p=top_p,
+        renormalize_logits=False,
+        pad_token_id=tokenizer.eos_token_id,
+    )
+
+    gen_strs = tokenizer.batch_decode(
+        generate_ids[:, num_input_ids:],
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=False,
+    )
+
+    # Clean up to free memory
+    del batch
+    del generate_ids
+    gc.collect()
+    torch.cuda.empty_cache()
 
     return gen_strs
