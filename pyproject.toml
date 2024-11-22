@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "llm_processes"
-version = "0.0.3"
+version = "0.0.4"
 description = "LLM Processes: Numerical Predictive Distributions Conditioned on Natural Language"
 authors = ["John Bronskill", "James Requeima", "Dami Choi"]
 license = "MIT"
