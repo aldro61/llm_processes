@@ -49,7 +49,9 @@ llm_map = {
     "falcon-7b-instruct": "tiiuae/falcon-7b-instruct",
     "falcon-40b-instruct": "tiiuae/falcon-40b-instruct",
 
-    "falcon-7b": "tiiuae/falcon-7b"
+    "falcon-7b": "tiiuae/falcon-7b",
+
+    "llama-3.3-70b-instruct": "meta-llama/Llama-3.3-70B-Instruct"
 }
 
 
